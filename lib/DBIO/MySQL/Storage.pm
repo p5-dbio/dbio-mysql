@@ -168,7 +168,7 @@ sub _run_connection_actions {
   if (
     $self->_dbh->{mysql_auto_reconnect}
       and
-    ! exists $self->_dbic_connect_attributes->{mysql_auto_reconnect}
+    ! exists $self->_dbio_connect_attributes->{mysql_auto_reconnect}
   ) {
     $self->_dbh->{mysql_auto_reconnect} = 0;
   }
