@@ -1,6 +1,7 @@
 requires 'perl', '5.020';
 requires 'DBIO';
 requires 'DBI';
+requires 'DBD::mysql';
 requires 'namespace::clean';
 
 on test => sub {
