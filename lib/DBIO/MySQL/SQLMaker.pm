@@ -6,6 +6,43 @@ use strict;
 
 use base qw( DBIO::SQLMaker );
 
+=head1 SYNOPSIS
+
+  # Used automatically by DBIO::MySQL::Storage — no manual setup needed.
+
+=head1 DESCRIPTION
+
+MySQL-specific SQL generation layer for L<DBIO>. Extends L<DBIO::SQLMaker>
+with the following MySQL adaptations:
+
+=over 4
+
+=item *
+
+C<INSERT> with no columns emits C<INSERT INTO t () VALUES ()> instead of
+the standard C<INSERT INTO t DEFAULT VALUES>, which MySQL does not support.
+
+=item *
+
+Supports C<STRAIGHT_JOIN> as a join type hint via the C<join_type> result
+source attribute.
+
+=item *
+
+C<UPDATE> and C<DELETE> statements that reference the modification target
+table in a subquery are automatically wrapped in a double subquery to work
+around MySQL's restriction against self-referencing in DML.
+
+=item *
+
+Implements MySQL's C<SELECT ... FOR UPDATE / FOR SHARE> locking syntax,
+including the C<OF tbl_name>, C<NOWAIT>, and C<SKIP LOCKED> clauses
+introduced in MySQL 8.0.1.
+
+=back
+
+=cut
+
 #
 # MySQL does not understand the standard INSERT INTO $table DEFAULT VALUES
 # Adjust SQL here instead
@@ -20,6 +57,13 @@ sub insert {
 
   return $self->next::method (@_);
 }
+
+=method insert
+
+Overrides the standard C<INSERT> to emit C<INSERT INTO t () VALUES ()> for
+rows with no column values, satisfying MySQL's syntax requirements.
+
+=cut
 
 # Allow STRAIGHT_JOIN's
 sub _generate_join_clause {
@@ -97,6 +141,18 @@ sub delete {
   return ($sql, @bind);
 }
 
+=method update
+
+=method delete
+
+Overrides the base C<update> and C<delete> methods. When the modification
+target table is referenced in a subquery within the same statement (a pattern
+MySQL rejects), the affected subquery is automatically re-wrapped in an
+additional C<SELECT * FROM (...) `_forced_double_subquery`> layer to satisfy
+MySQL's parser.
+
+=cut
+
 #
 # Support for MySQL lock clause syntax according to specification
 # including updates introduced in MySQL 8.0.1)
@@ -160,5 +216,32 @@ sub _lock_select {
 
   return " $sql";
 }
+
+=method _lock_select
+
+Generates the locking clause appended to C<SELECT> statements. Accepts
+either a plain string (C<'update'>, C<'share'>, C<'shared'>) or a hashref
+for fine-grained control:
+
+  $rs->search({}, { for => { type => 'update', of => ['tbl'], modifier => 'nowait' } });
+
+Valid C<type> values: C<update>, C<share>.
+Valid C<modifier> values: C<nowait>, C<skip_locked>.
+The C<of> key takes a table name or arrayref of table names.
+
+Note: C<'shared'> (C<LOCK IN SHARE MODE>) is deprecated; use C<'share'>
+(C<FOR SHARE>) instead.
+
+=seealso
+
+=over 4
+
+=item * L<DBIO::MySQL::Storage> - Storage class that uses this SQL maker
+
+=item * L<DBIO::MySQL> - Schema component entry point
+
+=back
+
+=cut
 
 1;

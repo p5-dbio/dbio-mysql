@@ -1,0 +1,6 @@
+Revision history for DBIO-MySQL
+
+{{$NEXT}}
+    - Add module POD for DBIO::MySQL
+    - Add README with scope, migration mapping, and test environment notes
+    - Clarify migration references against historical DBIx::Class naming

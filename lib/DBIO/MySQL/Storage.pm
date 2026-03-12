@@ -14,6 +14,51 @@ __PACKAGE__->sql_quote_char('`');
 
 __PACKAGE__->_use_multicolumn_in(1);
 
+=head1 SYNOPSIS
+
+  package MyApp::Schema;
+  use base 'DBIO::Schema';
+  __PACKAGE__->load_components('MySQL');
+
+  # Optionally enable strict mode on connect
+  my $schema = MyApp::Schema->connect(
+    $dsn, $user, $pass,
+    { on_connect_call => 'set_strict_mode' },
+  );
+
+=head1 DESCRIPTION
+
+MySQL storage backend for L<DBIO>. Extends L<DBIO::Storage::DBI> with
+MySQL-specific behavior:
+
+=over 4
+
+=item *
+
+Uses backtick quoting and C<LimitXY> pagination dialect.
+
+=item *
+
+Routes SQL generation through L<DBIO::MySQL::SQLMaker>.
+
+=item *
+
+Handles MySQL's restriction against referencing the modification target in
+a subquery by automatically wrapping affected C<UPDATE> and C<DELETE>
+statements in a double subquery.
+
+=item *
+
+Disables C<mysql_auto_reconnect> by default to prevent silent transaction
+loss.
+
+=back
+
+This class is auto-registered for the C<mysql> DBI driver and is set as the
+active storage class when L<DBIO::MySQL/connection> is called.
+
+=cut
+
 sub with_deferred_fk_checks {
   my ($self, $sub) = @_;
 
@@ -22,6 +67,16 @@ sub with_deferred_fk_checks {
   $self->_do_query('SET FOREIGN_KEY_CHECKS = 1');
 }
 
+=method with_deferred_fk_checks
+
+  $storage->with_deferred_fk_checks(sub { ... });
+
+Executes the given coderef with C<FOREIGN_KEY_CHECKS> disabled for the
+duration of the call. Useful when loading data with circular foreign key
+dependencies.
+
+=cut
+
 sub connect_call_set_strict_mode {
   my $self = shift;
 
@@ -29,6 +84,19 @@ sub connect_call_set_strict_mode {
   $self->_do_query(q|SET SQL_MODE = CONCAT('ANSI,TRADITIONAL,ONLY_FULL_GROUP_BY,', @@sql_mode)|);
   $self->_do_query(q|SET SQL_AUTO_IS_NULL = 0|);
 }
+
+=method connect_call_set_strict_mode
+
+  my $schema = MyApp::Schema->connect(
+    $dsn, $user, $pass,
+    { on_connect_call => 'set_strict_mode' },
+  );
+
+Connection callback that enables C<ANSI>, C<TRADITIONAL>, and
+C<ONLY_FULL_GROUP_BY> SQL modes and disables C<SQL_AUTO_IS_NULL>. Pass
+C<set_strict_mode> as an C<on_connect_call> option to activate it.
+
+=cut
 
 sub _dbh_last_insert_id {
   my ($self, $dbh, $source, $col) = @_;
@@ -150,6 +218,14 @@ sub deployment_statements {
   $self->next::method($schema, $type, $version, $dir, $sqltargs, @rest);
 }
 
+=method deployment_statements
+
+Overrides the base implementation to automatically pass C<mysql_version> to
+the SQL::Translator producer args when deploying a schema, so that generated
+DDL is compatible with the connected server version.
+
+=cut
+
 sub _exec_svp_begin {
     my ($self, $name) = @_;
 
@@ -173,8 +249,36 @@ sub is_replicating {
     return ($status->{Slave_IO_Running} eq 'Yes') && ($status->{Slave_SQL_Running} eq 'Yes');
 }
 
+=method is_replicating
+
+Returns true if the connected MySQL replica is currently replicating from its
+master (both IO and SQL threads running). Intended for use with
+L<DBIO::Storage::DBI::Replicated>.
+
+=cut
+
 sub lag_behind_master {
     return shift->_get_dbh->selectrow_hashref('show slave status')->{Seconds_Behind_Master};
 }
+
+=method lag_behind_master
+
+Returns the number of seconds the replica is behind the master, as reported
+by C<SHOW SLAVE STATUS>. Returns C<undef> if replication status is
+unavailable.
+
+=seealso
+
+=over 4
+
+=item * L<DBIO::MySQL> - Schema component that activates this storage
+
+=item * L<DBIO::MySQL::SQLMaker> - SQL generation used by this storage
+
+=item * L<DBIO::MySQL::Storage::MariaDB> - MariaDB-specific subclass
+
+=back
+
+=cut
 
 1;
