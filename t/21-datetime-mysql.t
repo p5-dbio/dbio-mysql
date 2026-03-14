@@ -6,7 +6,7 @@ use Test::Exception;
 use Test::Warn;
 
 use DBIO::Test;
-use DBIO::_Util 'sigwarn_silencer';
+use DBIO::Util 'sigwarn_silencer';
 
 my ($dsn, $user, $pass) = @ENV{map { "DBIOTEST_MYSQL_${_}" } qw/DSN USER PASS/};
 

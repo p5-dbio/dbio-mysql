@@ -11,7 +11,7 @@ use Time::HiRes qw/time sleep/;
 
 use lib qw(t/lib);
 use DBIO::Test;
-use DBIO::_Util 'sigwarn_silencer';
+use DBIO::Util 'sigwarn_silencer';
 
 my ($dsn, $user, $pass);
 

@@ -10,7 +10,6 @@ on test => sub {
   requires 'Test::Warn';
   requires 'DBI::Const::GetInfoType';
   requires 'Scalar::Util';
-  requires 'Path::Class';
   requires 'Time::HiRes';
   requires 'DBIO::Test';
 };

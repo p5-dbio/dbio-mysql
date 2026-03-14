@@ -1,6 +1,17 @@
 Revision history for DBIO-MySQL
 
 {{$NEXT}}
-    - Add module POD for DBIO::MySQL
-    - Add README with scope, migration mapping, and test environment notes
-    - Clarify migration references against historical DBIx::Class naming
+    - Initial release as standalone distribution extracted from DBIO core
+    - DBIO::MySQL schema component and DBIO::MySQL::Storage driver
+    - DBIO::MySQL::MariaDB schema component and DBIO::MySQL::Storage::MariaDB driver
+    - DBIO::MySQL::SQLMaker with MySQL-specific SQL generation
+    - DBIO::MySQL::Loader for Schema::Loader MySQL introspection support
+    - Add DBD::mysql as explicit dependency
+    - Migrate test suite from DBICTest to DBIO::Test
+    - Rename all DBIC references to DBIO throughout
+    - Rename _dbic_connect_attributes to _dbio_connect_attributes
+    - Replace Path::Class with DBIO::Util path helpers in Loader
+    - Add replicated coverage to MySQL driver tests
+    - Comprehensive POD documentation for all modules
+    - Align POD with DBIO conventions (=attr, =method collectors)
+    - Restore historical Loader provenance note
