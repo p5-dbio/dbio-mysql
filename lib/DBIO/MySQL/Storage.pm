@@ -253,7 +253,7 @@ sub is_replicating {
 
 Returns true if the connected MySQL replica is currently replicating from its
 master (both IO and SQL threads running). Intended for use with
-L<DBIO::Storage::DBI::Replicated>.
+L<DBIO::Replicated::Storage>.
 
 =cut
 

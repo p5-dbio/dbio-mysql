@@ -13,11 +13,6 @@ use DBIO::Loader::Utils qw/sigwarn_silencer/;
 use namespace::clean;
 use DBIO::Loader::Table ();
 
-
-=head1 NAME
-
-DBIO::MySQL::Loader - DBIO::Loader::DBI mysql Implementation.
-
 =head1 DESCRIPTION
 
 See L<DBIO::Loader> and L<DBIO::Loader::Base>.
@@ -379,15 +374,6 @@ sub _view_definition {
 
 L<DBIO::Loader>, L<DBIO::Loader::Base>,
 L<DBIO::Loader::DBI>
-
-=head1 AUTHORS
-
-See L<DBIO::Loader/AUTHORS>.
-
-=head1 LICENSE
-
-This library is free software; you can redistribute it and/or modify it under
-the same terms as Perl itself.
 
 =cut
 
