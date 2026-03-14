@@ -8,6 +8,7 @@ my @modules = qw(
   DBIO::MySQL::MariaDB
   DBIO::MySQL::Storage::MariaDB
   DBIO::MySQL::SQLMaker
+  DBIO::MySQL::Loader
 );
 
 plan tests => scalar @modules;

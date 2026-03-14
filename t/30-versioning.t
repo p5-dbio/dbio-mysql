@@ -5,7 +5,7 @@ use Test::More;
 use Test::Warn;
 use Test::Exception;
 
-use Path::Class;
+use DBIO::Util qw(dir_path file_path mkpath rmtree);
 use File::Copy;
 use Time::HiRes qw/time sleep/;
 
@@ -44,15 +44,15 @@ use_ok('DBIOVersion_v1');
 my $version_table_name = 'dbix_class_schema_versions';
 my $old_table_name = 'SchemaVersions';
 
-my $ddl_dir = dir(qw/t var/, "versioning_ddl-$$");
-$ddl_dir->mkpath unless -d $ddl_dir;
+my $ddl_dir = dir_path('t', 'var', "versioning_ddl-$$");
+mkpath($ddl_dir) unless -d $ddl_dir;
 
 my $fn = {
-    v1 => $ddl_dir->file ('DBIOVersion-Schema-1.0-MySQL.sql'),
-    v2 => $ddl_dir->file ('DBIOVersion-Schema-2.0-MySQL.sql'),
-    v3 => $ddl_dir->file ('DBIOVersion-Schema-3.0-MySQL.sql'),
-    trans_v12 => $ddl_dir->file ('DBIOVersion-Schema-1.0-2.0-MySQL.sql'),
-    trans_v23 => $ddl_dir->file ('DBIOVersion-Schema-2.0-3.0-MySQL.sql'),
+    v1 => file_path($ddl_dir, 'DBIOVersion-Schema-1.0-MySQL.sql'),
+    v2 => file_path($ddl_dir, 'DBIOVersion-Schema-2.0-MySQL.sql'),
+    v3 => file_path($ddl_dir, 'DBIOVersion-Schema-3.0-MySQL.sql'),
+    trans_v12 => file_path($ddl_dir, 'DBIOVersion-Schema-1.0-2.0-MySQL.sql'),
+    trans_v23 => file_path($ddl_dir, 'DBIOVersion-Schema-2.0-3.0-MySQL.sql'),
 };
 
 my $schema_v1 = DBIOVersion::Schema->connect($dsn, $user, $pass, { ignore_version => 1 });
@@ -327,7 +327,7 @@ is
 
 END {
   unless ($ENV{DBIOTEST_KEEP_VERSIONING_DDL}) {
-    $ddl_dir->rmtree;
+    rmtree($ddl_dir);
   }
 }
 
