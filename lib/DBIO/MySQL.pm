@@ -74,6 +74,11 @@ SQLMaker-focused tests can run offline via L<DBIO::Test> with:
 
   storage_type => 'DBIO::MySQL::Storage'
 
+Replicated-path tests can reuse the same harness with:
+
+  replicated   => 1,
+  storage_type => 'DBIO::MySQL::Storage'
+
 =head1 METHODS
 
 =method connection
