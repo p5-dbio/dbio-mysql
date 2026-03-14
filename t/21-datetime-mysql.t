@@ -64,7 +64,7 @@ foreach my $tbl (qw/EventTZ EventTZDeprecated/) {
   # Test floating timezone warning
   # We expect one warning
   SKIP: {
-    skip "ENV{DBIC_FLOATING_TZ_OK} was set, skipping", 1 if $ENV{DBIC_FLOATING_TZ_OK};
+    skip "ENV{DBIO_FLOATING_TZ_OK} was set, skipping", 1 if $ENV{DBIO_FLOATING_TZ_OK};
     warnings_exist (
       sub {
         $schema->resultset($tbl)->create({

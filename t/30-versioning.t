@@ -32,7 +32,7 @@ BEGIN {
 }
 
 # in case it came from the env
-$ENV{DBIC_NO_VERSION_CHECK} = 0;
+$ENV{DBIO_NO_VERSION_CHECK} = 0;
 
 # FIXME - work around RT#113965 in combination with -T on older perls:
 # the non-deparsing XS portion of D::D gets confused by some of the IO
@@ -41,6 +41,7 @@ $Data::Dumper::Deparse = 1;
 
 use_ok('DBIOVersion_v1');
 
+# TODO: rename table once DBIO core renames it from the legacy DBIx::Class name
 my $version_table_name = 'dbix_class_schema_versions';
 my $old_table_name = 'SchemaVersions';
 
@@ -208,7 +209,7 @@ my $schema_v3 = DBIOVersion::Schema->connect($dsn, $user, $pass, { ignore_versio
 }
 
 
-# check behaviour of DBIC_NO_VERSION_CHECK env var and ignore_version connect attr
+# check behaviour of DBIO_NO_VERSION_CHECK env var and ignore_version connect attr
 {
   my $schema_version = DBIOVersion::Schema->connect($dsn, $user, $pass);
   eval {
@@ -225,7 +226,7 @@ my $schema_v3 = DBIOVersion::Schema->connect($dsn, $user, $pass, { ignore_versio
   },  [], 'warning not detected with attr set');
 
 
-  local $ENV{DBIC_NO_VERSION_CHECK} = 1;
+  local $ENV{DBIO_NO_VERSION_CHECK} = 1;
   warnings_like ( sub {
     $schema_version = DBIOVersion::Schema->connect($dsn, $user, $pass);
   }, [], 'warning not detected with env var set');
@@ -269,7 +270,7 @@ my $schema_v3 = DBIOVersion::Schema->connect($dsn, $user, $pass, { ignore_versio
   };
 
   # Make sure the env var isn't whats triggering it
-  local $ENV{DBIC_NO_VERSION_CHECK} = 0;
+  local $ENV{DBIO_NO_VERSION_CHECK} = 0;
 
   DBIOVersion::Schema->connect({
     dsn => $dsn,
