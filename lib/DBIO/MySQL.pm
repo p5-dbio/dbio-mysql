@@ -17,11 +17,11 @@ use base 'DBIO';
 
 =head1 DESCRIPTION
 
-L<DBIO::MySQL> is the MySQL driver distribution for DBIO.
+L<DBIO::MySQL> is the MySQL driver component for DBIO.
 
 When this component is loaded into a schema class, C<connection()> sets
-L<DBIO::Schema/storage_type> to C<+DBIO::MySQL::Storage>, enabling
-MySQL-specific storage behavior.
+L<DBIO::Schema/storage_type> to C<+DBIO::MySQL::Storage>, which enables
+MySQL-specific storage behavior automatically.
 
 For MariaDB-specific behavior, see L<DBIO::MySQL::MariaDB> and
 L<DBIO::MySQL::Storage::MariaDB>.
