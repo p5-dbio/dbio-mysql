@@ -15,10 +15,13 @@ use DBIO::Loader::Table ();
 
 =head1 DESCRIPTION
 
-See L<DBIO::Loader> and L<DBIO::Loader::Base>.
+This is the MySQL-specific Loader implementation used by L<DBIO::Loader> when
+it detects a MySQL backend. It extends the generic DBI loader with
+MySQL-aware introspection for foreign keys, unique constraints, column types,
+and schema enumeration.
 
-This module was ported from the historical
-L<DBIx::Class::Schema::Loader::DBI::mysql>.
+For the public loader interface, see L<DBIO::Loader> and
+L<DBIO::Loader::Base>.
 
 =cut
 
