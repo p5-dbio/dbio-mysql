@@ -43,6 +43,26 @@ introduced in MySQL 8.0.1.
 
 =cut
 
+=method apply_limit
+
+Uses MySQL's C<LIMIT [offset,] rows> syntax instead of the standard
+C<LIMIT rows OFFSET offset>.
+
+=cut
+
+sub apply_limit {
+    my ( $self, $sql, $rs_attrs, $rows, $offset ) = @_;
+    $sql .= $self->_parse_rs_attrs( $rs_attrs ) . " LIMIT ";
+    if ($offset) {
+      $sql .= '?, ';
+      push @{$self->{limit_bind}}, [ $self->__offset_bindtype => $offset ];
+    }
+    $sql .= '?';
+    push @{$self->{limit_bind}}, [ $self->__rows_bindtype => $rows ];
+
+    return $sql;
+}
+
 #
 # MySQL does not understand the standard INSERT INTO $table DEFAULT VALUES
 # Adjust SQL here instead
