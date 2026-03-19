@@ -130,7 +130,7 @@ my $schema = DBIO::Test->init_schema(
 
 # Test support for inner joins on mysql v3
 for (
-  [ 3 => 'JOIN' ],
+  [ 3 => 'INNER JOIN' ],
   [ 4 => 'JOIN' ],
 ) {
   my ($ver, $join_op) = @$_;
