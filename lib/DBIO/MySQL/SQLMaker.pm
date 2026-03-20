@@ -1,5 +1,6 @@
 package DBIO::MySQL::SQLMaker;
 # ABSTRACT: MySQL-specific SQL generation for DBIO
+our $VERSION = '0.900';
 
 use warnings;
 use strict;

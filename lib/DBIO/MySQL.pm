@@ -1,5 +1,6 @@
 package DBIO::MySQL;
 # ABSTRACT: MySQL-specific schema management for DBIO
+our $VERSION = '0.900';
 
 use strict;
 use warnings;

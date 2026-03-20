@@ -1,5 +1,6 @@
 package DBIO::MySQL::Storage::MariaDB;
 # ABSTRACT: MariaDB-specific storage for DBIO
+our $VERSION = '0.900';
 
 use strict;
 use warnings;

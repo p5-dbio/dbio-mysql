@@ -1,5 +1,6 @@
 package DBIO::MySQL::Loader;
 # ABSTRACT: MySQL introspection for DBIO::Loader
+our $VERSION = '0.900';
 
 use strict;
 use warnings;

@@ -1,5 +1,6 @@
 package DBIO::MySQL::Storage;
 # ABSTRACT: MySQL storage layer for DBIO
+our $VERSION = '0.900';
 
 use strict;
 use warnings;
