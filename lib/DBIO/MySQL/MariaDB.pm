@@ -1,6 +1,6 @@
 package DBIO::MySQL::MariaDB;
 # ABSTRACT: MariaDB-specific schema management for DBIO
-our $VERSION = '0.900';
+our $VERSION = '0.900000';
 
 use strict;
 use warnings;
