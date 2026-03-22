@@ -220,6 +220,10 @@ sub _columns_info_for {
         elsif ($info->{data_type} eq 'double') {
             $info->{data_type} = 'double precision';
         }
+        elsif ($info->{data_type} =~ /^(point|linestring|polygon|multipoint|multilinestring|multipolygon|geometry|geometrycollection)\z/i) {
+            $info->{data_type} = lc($info->{data_type});
+            $info->{extra}{mysql_spatial} = 1;
+        }
         my $data_type = $info->{data_type};
 
         delete $info->{size} if $data_type !~ /^(?: (?:var)?(?:char(?:acter)?|binary) | bit | year)\z/ix;
@@ -286,6 +290,46 @@ EOF
         }
     }
 
+    # Column-level charset and collation
+    my $charset_sth = eval { $self->dbh->prepare(
+        q{SELECT column_name, character_set_name, collation_name
+          FROM information_schema.columns
+          WHERE table_schema = schema() AND table_name = ?
+            AND character_set_name IS NOT NULL}
+    ) };
+    if ($charset_sth) {
+        $charset_sth->execute($table->name);
+        while (my $row = $charset_sth->fetchrow_hashref) {
+            my $col_name = $self->_lc($row->{column_name} // $row->{COLUMN_NAME});
+            next unless exists $result->{$col_name};
+            my $charset = $row->{character_set_name} // $row->{CHARACTER_SET_NAME};
+            my $collation = $row->{collation_name} // $row->{COLLATION_NAME};
+            $result->{$col_name}{extra}{mysql_charset}   = $charset   if $charset;
+            $result->{$col_name}{extra}{mysql_collation}  = $collation if $collation;
+        }
+    }
+
+    # Virtual/generated columns (MySQL 5.7+, MariaDB 10.2+)
+    my $gen_sth = eval { $self->dbh->prepare(
+        q{SELECT column_name, generation_expression, extra
+          FROM information_schema.columns
+          WHERE table_schema = schema() AND table_name = ?
+            AND generation_expression IS NOT NULL
+            AND generation_expression != ''}
+    ) };
+    if ($gen_sth) {
+        $gen_sth->execute($table->name);
+        while (my $row = $gen_sth->fetchrow_hashref) {
+            my $col_name = $self->_lc($row->{column_name} // $row->{COLUMN_NAME});
+            next unless exists $result->{$col_name};
+            my $extra_str = lc($row->{extra} // $row->{EXTRA} // '');
+            my $kind = $extra_str =~ /stored/i ? 'stored' : 'virtual';
+            $result->{$col_name}{extra}{generated} = $kind;
+            $result->{$col_name}{extra}{generation_expression} =
+                $row->{generation_expression} // $row->{GENERATION_EXPRESSION};
+        }
+    }
+
     return $result;
 }
 
@@ -310,8 +354,41 @@ sub _extra_column_info {
         my $current_timestamp = 'current_timestamp';
         $extra_info{default_value} = \$current_timestamp;
     }
+    if ((not blessed $dbi_info)
+        && ($dbi_info->{mysql_type_name} || '') =~ /on update current_timestamp/i) {
+        $extra_info{extra}{on_update_current_timestamp} = 1;
+    }
 
     return \%extra_info;
+}
+
+sub _setup_src_meta {
+    my ($self, $table) = @_;
+    $self->next::method($table);
+
+    my $table_class = $self->classes->{$table->sql_name};
+
+    # Engine type and table collation
+    my $table_meta = try {
+        my ($engine, $collation) = $self->dbh->selectrow_array(
+            q{SELECT engine, table_collation
+              FROM information_schema.tables
+              WHERE table_schema = schema() AND table_name = ?},
+            undef, $table->name,
+        );
+        my %meta;
+        $meta{mysql_engine}    = $engine    if $engine;
+        $meta{mysql_collation} = $collation if $collation;
+        \%meta;
+    };
+
+    if ($table_meta && %$table_meta) {
+        $self->_dbic_stmt(
+            $table_class,
+            'result_source_instance->source_info',
+            $table_meta,
+        );
+    }
 }
 
 sub _dbh_column_info {

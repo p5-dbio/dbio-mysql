@@ -20,7 +20,7 @@ my $tmpdir = tempdir(CLEANUP => 1);
 my $dbh = DBI->connect($dsn, $user, $pass, { RaiseError => 1 });
 
 # Clean up any previous test run
-for my $t (qw(cd_tag track cd tag artist type_test)) {
+for my $t (qw(cd_tag track cd tag artist type_test gen_test spatial_test)) {
     $dbh->do("DROP TABLE IF EXISTS dbio_loader_$t");
 }
 
@@ -69,6 +69,27 @@ $dbh->do("CREATE TABLE dbio_loader_type_test (
     dec_col DECIMAL(10,2),
     uint_col INTEGER UNSIGNED
 ) ENGINE=InnoDB");
+
+# Virtual/generated columns (MySQL 5.7+)
+my $has_generated = eval {
+    $dbh->do('CREATE TABLE dbio_loader_gen_test (
+        id INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,
+        price DECIMAL(10,2),
+        tax DECIMAL(10,2) GENERATED ALWAYS AS (price * 0.19) STORED,
+        label VARCHAR(100) GENERATED ALWAYS AS (CONCAT(\'Item #\', id)) VIRTUAL
+    ) ENGINE=InnoDB');
+    1;
+};
+
+# Spatial columns (if available)
+my $has_spatial = eval {
+    $dbh->do('CREATE TABLE dbio_loader_spatial_test (
+        id INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,
+        location POINT,
+        area POLYGON
+    ) ENGINE=InnoDB');
+    1;
+};
 
 $dbh->disconnect;
 
@@ -124,6 +145,30 @@ like $types, qr/data_type.*"set"/s,        'set column detected';
 like $types, qr/data_type.*"json"/s,       'json column detected';
 like $types, qr/is_auto_increment.*1/s,    'auto_increment detected';
 
+# Unsigned column
+like $types, qr/unsigned/s, 'unsigned integer detected';
+
+# Table-level engine metadata (via source_info)
+like $types, qr/source_info/s, 'source_info emitted for table metadata';
+like $types, qr/mysql_engine/s, 'mysql_engine in source_info';
+
+# Generated columns
+SKIP: {
+    skip 'MySQL too old for generated columns', 3 unless $has_generated;
+    ok -f "$rd/DbioLoaderGenTest.pm", 'gen_test table found';
+    my $gen = _slurp("$rd/DbioLoaderGenTest.pm");
+    like $gen, qr/generated.*stored/s, 'stored generated column detected';
+    like $gen, qr/generated.*virtual/s, 'virtual generated column detected';
+}
+
+# Spatial
+SKIP: {
+    skip 'MySQL spatial not available', 2 unless $has_spatial;
+    ok -f "$rd/DbioLoaderSpatialTest.pm", 'spatial_test table found';
+    my $sp = _slurp("$rd/DbioLoaderSpatialTest.pm");
+    like $sp, qr/mysql_spatial/, 'spatial type detected';
+}
+
 # --- Cake style ---
 
 my $cake_dir = File::Spec->catdir($tmpdir, 'cake');
@@ -152,7 +197,7 @@ like $cake_artist, qr/^col id => /m,       'cake: col DSL';
 
 # Cleanup
 $dbh = DBI->connect($dsn, $user, $pass, { RaiseError => 1 });
-for my $t (qw(cd_tag track cd tag artist type_test)) {
+for my $t (qw(cd_tag track cd tag artist type_test gen_test spatial_test)) {
     $dbh->do("DROP TABLE IF EXISTS dbio_loader_$t");
 }
 $dbh->disconnect;
