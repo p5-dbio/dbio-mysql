@@ -9,6 +9,7 @@ use DBI::Const::GetInfoType;
 use Scalar::Util qw/weaken/;
 
 use DBIO::Test;
+use DBIO::Util qw(peepeeness);
 
 my ($dsn, $user, $pass) = @ENV{map { "DBIOTEST_MYSQL_${_}" } qw/DSN USER PASS/};
 
@@ -416,7 +417,7 @@ ZEROINSEARCH: {
 
       {
         local $TODO = "Perl $] is known to leak like a sieve"
-          if DBIO::_ENV_::PEEPEENESS;
+          if peepeeness;
 
         ok (! defined $orig_dbh, 'Parent $dbh handle is gone');
       }
@@ -440,7 +441,7 @@ ZEROINSEARCH: {
 
       {
         local $TODO = "Perl $] is known to leak like a sieve"
-          if DBIO::_ENV_::PEEPEENESS;
+          if peepeeness;
 
         ok (! defined $orig_dbh, 'DBIO operation triggered reconnect - old $dbh is gone');
       }

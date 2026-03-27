@@ -2,6 +2,7 @@ requires 'perl', '5.020';
 requires 'DBIO';
 requires 'DBI';
 requires 'namespace::clean';
+requires 'DateTime::Format::MySQL';
 
 recommends 'DBD::mysql';
 recommends 'DBD::MariaDB';
