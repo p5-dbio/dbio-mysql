@@ -3,3 +3,6 @@ Revision history for DBIO-MySQL
 {{$NEXT}}
     - Add apply_limit() to DBIO::MySQL::SQLMaker (LIMIT ?, ? syntax)
     - Remove sql_limit_dialect from Storage (limit logic now in SQLMaker)
+    - Declare DateTime::Format::MySQL as a runtime dependency
+    - Add AccessBroker connect smoke coverage for MySQL storage
+    - Move PEEPEENESS test usage to DBIO::Util
