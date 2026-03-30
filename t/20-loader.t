@@ -4,9 +4,9 @@ use Test::More;
 use File::Temp qw(tempdir);
 use File::Spec;
 
-my ($dsn, $user, $pass) = @ENV{map { "DBIOTEST_MYSQL_$_" } qw(DSN USER PASS)};
+my ($dsn, $user, $pass) = @ENV{map { "DBIO_TEST_MYSQL_$_" } qw(DSN USER PASS)};
 
-plan skip_all => 'Set DBIOTEST_MYSQL_DSN, _USER and _PASS to run this test'
+plan skip_all => 'Set DBIO_TEST_MYSQL_DSN, _USER and _PASS to run this test'
     unless $dsn;
 
 eval { require DBIO::Loader }
