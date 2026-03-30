@@ -8,6 +8,7 @@ recommends 'DBD::mysql';
 recommends 'DBD::MariaDB';
 
 on test => sub {
+  recommends 'Kubernetes::REST';
   requires 'Test::More', '0.98';
   requires 'Test::Exception';
   requires 'Test::Warn';
