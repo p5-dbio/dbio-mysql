@@ -174,8 +174,10 @@ SKIP: {
         $test_type_info->{charfield}->{data_type} = 'VARCHAR';
     }
 
-    # MySQL 8.0+ removed integer display width, so size is undef for INT
-    if ($norm_version >= 8.000000_00) {
+    # MySQL 8.0+ removed integer display width, so size is undef for INT.
+    # MariaDB still returns display width regardless of version.
+    my $is_mariadb = $schema->storage->isa('DBIO::MySQL::Storage::MariaDB');
+    if ($norm_version >= 8.000000_00 && !$is_mariadb) {
         $test_type_info->{artistid}{size} = undef;
         $test_type_info->{rank}{size} = undef;
     }

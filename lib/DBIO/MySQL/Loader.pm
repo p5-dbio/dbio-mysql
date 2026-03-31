@@ -55,6 +55,12 @@ sub _setup {
     }
 }
 
+# DBD::mysql uses mysql_* attributes; DBD::MariaDB uses mariadb_* attributes.
+sub _dbd_attr_prefix {
+    my ($self) = @_;
+    return $self->dbh->{Driver}{Name} eq 'MariaDB' ? 'mariadb' : 'mysql';
+}
+
 sub _show_databases {
     my $self = shift;
 
@@ -264,6 +270,13 @@ EOF
                 $info->{datetime_undef_if_invalid} = 1;
             }
         }
+        # MariaDB reports spatial types as varchar — correct using column_type
+        elsif ($column_type =~ /^(point|linestring|polygon|multipoint|multilinestring|multipolygon|geometry(?:collection)?)\z/i) {
+            $info->{data_type} = lc($1);
+            $info->{extra}{mysql_spatial} = 1;
+            delete $info->{size};
+            delete $info->{is_auto_increment};
+        }
         elsif ($data_type =~ /^(?:enum|set)\z/ && $has_information_schema
                && $column_type =~ /^(?:enum|set)\(/) {
 
@@ -302,10 +315,20 @@ EOF
         while (my $row = $charset_sth->fetchrow_hashref) {
             my $col_name = $self->_lc($row->{column_name} // $row->{COLUMN_NAME});
             next unless exists $result->{$col_name};
-            my $charset = $row->{character_set_name} // $row->{CHARACTER_SET_NAME};
-            my $collation = $row->{collation_name} // $row->{COLLATION_NAME};
+            my $charset   = $row->{character_set_name} // $row->{CHARACTER_SET_NAME};
+            my $collation = $row->{collation_name}      // $row->{COLLATION_NAME};
             $result->{$col_name}{extra}{mysql_charset}   = $charset   if $charset;
-            $result->{$col_name}{extra}{mysql_collation}  = $collation if $collation;
+            $result->{$col_name}{extra}{mysql_collation} = $collation if $collation;
+
+            # MariaDB has no native JSON type — it stores JSON as longtext with
+            # utf8mb4_bin collation.  Remap to data_type => 'json'.
+            if (   $self->_dbd_attr_prefix eq 'mariadb'
+                && ($result->{$col_name}{data_type} // '') eq 'longtext'
+                && ($collation // '') eq 'utf8mb4_bin' ) {
+                $result->{$col_name}{data_type} = 'json';
+                delete $result->{$col_name}{extra}{mysql_charset};
+                delete $result->{$col_name}{extra}{mysql_collation};
+            }
         }
     }
 
@@ -337,25 +360,31 @@ sub _extra_column_info {
     no warnings 'uninitialized';
     my ($self, $table, $col, $info, $dbi_info) = @_;
     my %extra_info;
+    my $p = $self->_dbd_attr_prefix;
 
-    if ($dbi_info->{mysql_is_auto_increment}) {
-        $extra_info{is_auto_increment} = 1
+    # DBD::mysql and DBD::MariaDB throw on unknown sth attributes, so use eval
+    my $is_auto_inc = eval { $dbi_info->{"${p}_is_auto_increment"} };
+    my $type_name   = eval { $dbi_info->{"${p}_type_name"} } // '';
+    my $values      = eval { $dbi_info->{"${p}_values"} };
+
+    if ($is_auto_inc) {
+        $extra_info{is_auto_increment} = 1;
     }
-    if ($dbi_info->{mysql_type_name} =~ /\bunsigned\b/i) {
+    if ($type_name =~ /\bunsigned\b/i) {
         $extra_info{extra}{unsigned} = 1;
     }
-    if ($dbi_info->{mysql_values}) {
-        $extra_info{extra}{list} = $dbi_info->{mysql_values};
+    if ($values) {
+        $extra_info{extra}{list} = $values;
     }
     if ((not blessed $dbi_info) # isa $sth
-        && lc($dbi_info->{COLUMN_DEF})      eq 'current_timestamp'
-        && lc($dbi_info->{mysql_type_name}) eq 'timestamp') {
+        && lc($dbi_info->{COLUMN_DEF}) eq 'current_timestamp'
+        && lc($type_name)              eq 'timestamp') {
 
         my $current_timestamp = 'current_timestamp';
         $extra_info{default_value} = \$current_timestamp;
     }
     if ((not blessed $dbi_info)
-        && ($dbi_info->{mysql_type_name} || '') =~ /on update current_timestamp/i) {
+        && $type_name =~ /on update current_timestamp/i) {
         $extra_info{extra}{on_update_current_timestamp} = 1;
     }
 
