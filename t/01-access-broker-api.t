@@ -12,7 +12,7 @@ use DBIO::AccessBroker::Static;
 }
 
 my $broker = DBIO::AccessBroker::Static->new(
-  dsn      => 'dbi:mysql:database=dbio_test;host=localhost',
+  dsn      => 'dbi:MariaDB:database=dbio_test;host=localhost',
   username => 'dbio',
   password => 'secret',
 );

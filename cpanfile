@@ -4,11 +4,9 @@ requires 'DBI';
 requires 'namespace::clean';
 requires 'DateTime::Format::MySQL';
 
-# DBD::MariaDB bundles its own connector and works with MySQL and MariaDB.
-# DBD::mysql requires system MySQL/MariaDB client libraries — install it
-# only if you specifically need it.
+# DBD::MariaDB bundles the MariaDB Connector/C and works with both MySQL 5.7+
+# and MariaDB 10+. DBD::mysql does not build against libmariadb headers.
 recommends 'DBD::MariaDB';
-recommends 'DBD::mysql';
 
 on test => sub {
   recommends 'Kubernetes::REST';

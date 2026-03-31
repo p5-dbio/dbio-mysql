@@ -44,7 +44,7 @@ $dbh->do("DROP TABLE IF EXISTS books;");
 
 $dbh->do("CREATE TABLE books (id INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY, source VARCHAR(100) NOT NULL, owner integer NOT NULL, title varchar(100) NOT NULL,  price integer);");
 
-#'dbi:mysql:host=localhost;database=dbio_test', 'dbio_test', '');
+#'dbi:MariaDB:host=localhost;database=dbio_test', 'dbio_test', '');
 
 # make sure sqlt_type overrides work (::Storage::DBI::mysql does this)
 {
