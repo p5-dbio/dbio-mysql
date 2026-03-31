@@ -119,11 +119,8 @@ sub _create_pod {
         ],
         ports          => [{ containerPort => 3306 }],
         readinessProbe => {
-          exec => { command => [
-            'sh', '-c',
-            "mysqladmin ping -h localhost -u root -p$root_pass --silent 2>/dev/null",
-          ]},
-          initialDelaySeconds => 10,
+          tcpSocket           => { port => 3306 },
+          initialDelaySeconds => 15,
           periodSeconds       => 3,
         },
       }],
@@ -147,17 +144,29 @@ sub _create_service {
 sub _wait_for_ready {
   my ($k8s, $ns, $name, $user) = @_;
   print STDERR "Waiting for pod $name to be ready";
-  my $deadline = time + 180;
+  my $deadline = time + 300;
+  my $last_phase = '';
   while (time < $deadline) {
     my $pod = eval { $k8s->get('Pod', name => $name, namespace => $ns) };
-    if ($pod && _pod_ready($pod)) {
-      print STDERR " ready\n";
-      return _get_service_endpoint($k8s, $ns, $name);
+    if ($pod) {
+      return _get_service_endpoint($k8s, $ns, $name) if _pod_ready($pod);
+      my $phase = eval { $pod->status->phase } // '?';
+      # Show phase changes and any waiting reason (e.g. ErrImagePull)
+      my $reason = eval {
+        my $cs = $pod->status->containerStatuses // [];
+        @$cs ? ($cs->[0]->state->waiting // {})->{reason} // '' : ''
+      } // '';
+      my $status = $reason ? "$phase/$reason" : $phase;
+      if ($status ne $last_phase) {
+        print STDERR " [$status]";
+        $last_phase = $status;
+      }
     }
     print STDERR '.';
     Time::HiRes::sleep(3);
   }
-  die "\nTimed out waiting for pod $name\n";
+  print STDERR "\n";
+  die "Timed out waiting for pod $name\n";
 }
 
 sub _pod_ready {
