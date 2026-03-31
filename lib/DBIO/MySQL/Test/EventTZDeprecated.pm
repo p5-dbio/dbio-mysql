@@ -16,6 +16,7 @@ __PACKAGE__->add_columns(
 
   starts_at => {
     data_type => 'date',
+    locale    => 'de_DE',
     extra     => { timezone => 'America/Chicago' },
     datetime_undef_if_invalid => 1,
   },

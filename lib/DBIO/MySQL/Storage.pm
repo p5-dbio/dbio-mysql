@@ -188,6 +188,11 @@ sub sql_maker {
 
   my $sm = $self->next::method(@_);
 
+  # MySQL always uses backtick quoting — ensure it is active even when
+  # the caller did not pass quote_names in connect_info.
+  $sm->{quote_char} //= $self->sql_quote_char;
+  $sm->{name_sep}   //= $self->sql_name_sep;
+
   # mysql 3 does not understand a bare JOIN
   $sm->{_default_jointype} = 'INNER' if $mysql_ver < 4;
 

@@ -14,7 +14,7 @@ __PACKAGE__->table('event');
 __PACKAGE__->add_columns(
   id => { data_type => 'integer', is_auto_increment => 1 },
 
-  starts_at => { data_type => 'date', timezone => 'America/Chicago', datetime_undef_if_invalid => 1 },
+  starts_at => { data_type => 'date', locale => 'de_DE', timezone => 'America/Chicago', datetime_undef_if_invalid => 1 },
 
   created_on => {
     data_type => 'datetime',
