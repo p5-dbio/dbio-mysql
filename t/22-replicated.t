@@ -23,7 +23,7 @@ my ($replicant) = $schema->storage->pool->all_replicants;
 isa_ok $replicant->storage, 'DBIO::MySQL::Storage', 'replicant uses mysql storage';
 $replicant->storage->reset_captured;
 $replicant->storage->mock_persistent(
-  qr/SELECT .* FROM artist/i,
+  qr/SELECT .* FROM `artist`/i,
   [[1, 'Replicated MySQL Artist', 13, undef]],
 );
 
