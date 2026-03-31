@@ -17,17 +17,17 @@ for my $mod (qw(DateTime DateTime::Format::MySQL DateTime::TimeZone DateTime::Lo
   eval "require $mod" or plan skip_all => "Inflation tests need $mod";
 }
 
+DBIO::Test::Schema->load_classes({ 'DBIO::MySQL::Test' => ['EventTZ'] });
+{
+  local $SIG{__WARN__} = sigwarn_silencer( qr/extra \=\> .+? has been deprecated/ );
+  DBIO::Test::Schema->load_classes({ 'DBIO::MySQL::Test' => ['EventTZDeprecated'] });
+}
+
 my $schema = DBIO::Test->init_schema(
   dsn  => $dsn,
   user => $user,
   pass => $pass,
 );
-
-{
-  DBIO::Test::Schema->load_classes('EventTZ');
-  local $SIG{__WARN__} = sigwarn_silencer( qr/extra \=\> .+? has been deprecated/ );
-  DBIO::Test::Schema->load_classes('EventTZDeprecated');
-}
 
 # Test "timezone" parameter
 foreach my $tbl (qw/EventTZ EventTZDeprecated/) {
