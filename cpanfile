@@ -4,8 +4,11 @@ requires 'DBI';
 requires 'namespace::clean';
 requires 'DateTime::Format::MySQL';
 
-recommends 'DBD::mysql';
+# DBD::MariaDB bundles its own connector and works with MySQL and MariaDB.
+# DBD::mysql requires system MySQL/MariaDB client libraries — install it
+# only if you specifically need it.
 recommends 'DBD::MariaDB';
+recommends 'DBD::mysql';
 
 on test => sub {
   recommends 'Kubernetes::REST';

@@ -13,7 +13,12 @@
 # Without a command: starts the pod and blocks until Ctrl-C, then stops.
 #
 # Options:
-#   --mariadb   Use MariaDB instead of MySQL (image: src.ci/srv/mariadb:11)
+#   --mariadb   Use MariaDB instead of MySQL (image: mariadb:11)
+#   --mysql     Use MySQL (image: mysql:8); default is MariaDB
+#
+# DBD::MariaDB is used for both flavors — it bundles the MariaDB Connector/C
+# and works with MySQL 5.7+ and MariaDB 10+. DBD::mysql requires system
+# MySQL/MariaDB client libraries and is not used by default.
 
 use strict;
 use warnings;
@@ -25,10 +30,10 @@ use POSIX ();
 my $kubeconfig_path = $ENV{DBIO_TEST_KUBECONFIG}
   or die "DBIO_TEST_KUBECONFIG is not set\n";
 
-# Parse --mariadb flag before the command
-my $mariadb = 0;
-if (@ARGV && $ARGV[0] eq '--mariadb') {
-  $mariadb = 1;
+# Parse --mariadb / --mysql flag before the command (default: mariadb)
+my $mariadb = 1;
+while (@ARGV && $ARGV[0] =~ /^--(mariadb|mysql)$/) {
+  $mariadb = ($1 eq 'mariadb') ? 1 : 0;
   shift @ARGV;
 }
 
@@ -50,8 +55,8 @@ _create_pod($k8s, $io, $ns, $name, $image, $db_user, $db_pass, $db_root, $db_nam
 _create_service($k8s, $io, $ns, $name, $db_port);
 my ($host, $port) = _wait_for_ready($k8s, $ns, $name, $db_user);
 
-my $driver = $mariadb ? 'MariaDB' : 'mysql';
-$ENV{DBIO_TEST_MYSQL_DSN}  = "dbi:$driver:database=$db_name;host=$host;port=$port";
+# Always use DBD::MariaDB — it bundles its own connector and works with both
+$ENV{DBIO_TEST_MYSQL_DSN}  = "dbi:MariaDB:database=$db_name;host=$host;port=$port";
 $ENV{DBIO_TEST_MYSQL_USER} = $db_user;
 $ENV{DBIO_TEST_MYSQL_PASS} = $db_pass;
 
@@ -114,7 +119,10 @@ sub _create_pod {
         ],
         ports          => [{ containerPort => 3306 }],
         readinessProbe => {
-          exec                => { command => ['mysqladmin', 'ping', '-h', 'localhost'] },
+          exec => { command => [
+            'sh', '-c',
+            "mysqladmin ping -h localhost -u root -p$root_pass --silent 2>/dev/null",
+          ]},
           initialDelaySeconds => 10,
           periodSeconds       => 3,
         },
