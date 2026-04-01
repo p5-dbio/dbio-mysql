@@ -235,14 +235,29 @@ sub _columns_info_for {
         delete $info->{size} if $data_type !~ /^(?: (?:var)?(?:char(?:acter)?|binary) | bit | year)\z/ix;
 
         # information_schema is available in 5.0+
-        my ($precision, $scale, $column_type, $default) = eval { $self->dbh->selectrow_array(<<'EOF', {}, $table->name, lc($col)) };
-SELECT numeric_precision, numeric_scale, column_type, column_default
+        my ($precision, $scale, $column_type, $default, $is_col_extra) = eval { $self->dbh->selectrow_array(<<'EOF', {}, $table->name, lc($col)) };
+SELECT numeric_precision, numeric_scale, column_type, column_default, extra
 FROM information_schema.columns
 WHERE table_schema = schema() AND table_name = ? AND lower(column_name) = ?
 EOF
         my $has_information_schema = not $@;
 
         $column_type = '' if not defined $column_type;
+
+        # DBD::MariaDB's mariadb_is_auto_increment is unreliable against MySQL 8
+        # (returns 1 for all columns). Use information_schema.extra instead.
+        if ($has_information_schema && defined $is_col_extra) {
+            if ($is_col_extra =~ /auto_increment/i) {
+                $info->{is_auto_increment} = 1;
+            } else {
+                delete $info->{is_auto_increment};
+            }
+        }
+
+        # unsigned detection from column_type — mariadb_type_name unreliable on MySQL 8
+        if ($column_type =~ /\bunsigned\b/i) {
+            $info->{extra}{unsigned} = 1;
+        }
 
         if ($data_type eq 'bit' && (not exists $info->{size})) {
             $info->{size} = $precision if defined $precision;
@@ -270,16 +285,17 @@ EOF
                 $info->{datetime_undef_if_invalid} = 1;
             }
         }
-        # MariaDB reports spatial types as varchar — correct using column_type
+        # MariaDB/MySQL 8 may report spatial types as varchar — correct using column_type
         elsif ($column_type =~ /^(point|linestring|polygon|multipoint|multilinestring|multipolygon|geometry(?:collection)?)\z/i) {
             $info->{data_type} = lc($1);
             $info->{extra}{mysql_spatial} = 1;
             delete $info->{size};
             delete $info->{is_auto_increment};
         }
-        elsif ($data_type =~ /^(?:enum|set)\z/ && $has_information_schema
-               && $column_type =~ /^(?:enum|set)\(/) {
-
+        # enum/set: check column_type directly — mariadb_type_name is unreliable on MySQL 8
+        elsif ($has_information_schema && $column_type =~ /^(enum|set)\(/i) {
+            $info->{data_type} = lc($1);
+            delete $info->{size};
             delete $info->{extra}{list};
 
             while ($column_type =~ /'((?:[^']* (?:''|\\')* [^']*)* [^\\']?)',?/xg) {
@@ -287,6 +303,11 @@ EOF
                 $el =~ s/''/'/g;
                 push @{ $info->{extra}{list} }, $el;
             }
+        }
+        # MySQL 8 native JSON — DBD::MariaDB may report it as varchar
+        elsif (lc($column_type) eq 'json') {
+            $info->{data_type} = 'json';
+            delete $info->{size};
         }
 
         # Sometimes apparently there's a bug where default_value gets set to ''
