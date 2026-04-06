@@ -96,7 +96,7 @@ my $rs = $schema->resultset('User')
 
 - `DBIO::Test` provides test utilities
 - **Core tests MUST use `DBIO::Test::Storage` (fake storage)**, NEVER `dbi:SQLite` or any real DB
-- Driver integration tests use env vars: `DBIOTEST_PG_DSN`, `TEST_DBIO_POSTGRESQL_DSN`, etc.
+- Driver integration tests use env vars: `DBIO_TEST_PG_DSN`, `DBIO_TEST_PG_DSN`, etc.
 - Test files in `t/`, author tests in `xt/`
 - **Shared test schemas** for cross-distribution features go in `DBIO::Test::Schema::*` under `dbio/lib/`
 - Do NOT redefine result classes inline in driver tests — use the shared namespace

@@ -67,9 +67,9 @@ DSNs and load the new storage class via the driver registry.
 
 Integration tests in this distribution use:
 
-  DBIOTEST_MYSQL_DSN
-  DBIOTEST_MYSQL_USER
-  DBIOTEST_MYSQL_PASS
+  DBIO_TEST_MYSQL_DSN
+  DBIO_TEST_MYSQL_USER
+  DBIO_TEST_MYSQL_PASS
 
 SQLMaker-focused tests can run offline via L<DBIO::Test> with:
 

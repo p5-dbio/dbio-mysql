@@ -327,7 +327,7 @@ is
 }
 
 END {
-  unless ($ENV{DBIOTEST_KEEP_VERSIONING_DDL}) {
+  unless ($ENV{DBIO_TEST_KEEP_VERSIONING_DDL}) {
     rmtree($ddl_dir);
   }
 }

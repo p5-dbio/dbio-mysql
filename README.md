@@ -23,9 +23,9 @@ class through `DBIO::Storage::DBI` driver registration.
 
 Set environment variables for integration tests:
 
-- `DBIOTEST_MYSQL_DSN`
-- `DBIOTEST_MYSQL_USER`
-- `DBIOTEST_MYSQL_PASS`
+- `DBIO_TEST_MYSQL_DSN`
+- `DBIO_TEST_MYSQL_USER`
+- `DBIO_TEST_MYSQL_PASS`
 
 `t/20-sqlmaker-mysql.t` can run without a live database by using
 `DBIO::Test` hybrid fake storage with

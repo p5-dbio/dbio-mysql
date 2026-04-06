@@ -128,6 +128,6 @@ SELECT * FROM t LIMIT 20, 10;  -- offset, count (MySQL-specific order!)
 
 ## Testing with MySQL/MariaDB
 
-- Integration tests: `DBIOTEST_MYSQL_DSN`, `DBIOTEST_MYSQL_USER`, `DBIOTEST_MYSQL_PASS`
+- Integration tests: `DBIO_TEST_MYSQL_DSN`, `DBIO_TEST_MYSQL_USER`, `DBIO_TEST_MYSQL_PASS`
 - Docker: `docker run -d -e MYSQL_ROOT_PASSWORD=test -p 3306:3306 mysql:8`
 - MariaDB: `docker run -d -e MARIADB_ROOT_PASSWORD=test -p 3306:3306 mariadb:11`
