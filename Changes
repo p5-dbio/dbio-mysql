@@ -6,3 +6,5 @@ Revision history for DBIO-MySQL
     - Declare DateTime::Format::MySQL as a runtime dependency
     - Add AccessBroker connect smoke coverage for MySQL storage
     - Move PEEPEENESS test usage to DBIO::Util
+    - Add deploy_defaults() and deploy_setup() to MySQL::Storage so drivers
+      declare their own test-deploy requirements (add_drop_table, sql_mode fixup)

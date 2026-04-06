@@ -203,6 +203,37 @@ sub sqlt_type {
   return 'MySQL';
 }
 
+=method deploy_defaults
+
+MySQL has no transactional DDL and no C<IF NOT EXISTS> on all statement types.
+Returns C<< add_drop_table => 1 >> so that L<DBIO::Test> can safely re-deploy
+the same schema in a test sequence without hitting C<table already exists>
+errors.
+
+=cut
+
+sub deploy_defaults {
+  return (add_drop_table => 1);
+}
+
+=method deploy_setup
+
+Strips C<NO_ZERO_DATE> and C<NO_ZERO_IN_DATE> from the session C<sql_mode>
+before deploying a schema during tests.  MySQL 8 strict mode rejects
+C<0000-00-00> which the test suite uses to verify
+C<datetime_undef_if_invalid> behaviour.
+
+=cut
+
+sub deploy_setup {
+  my ($self, $schema) = @_;
+  eval {
+    $self->dbh->do(
+      q{SET SESSION sql_mode = REPLACE(REPLACE(@@SESSION.sql_mode,'NO_ZERO_DATE',''),'NO_ZERO_IN_DATE','')}
+    );
+  };
+}
+
 sub _random_function { 'RAND()' }
 
 sub _explain_sql { "EXPLAIN $_[1]" }
