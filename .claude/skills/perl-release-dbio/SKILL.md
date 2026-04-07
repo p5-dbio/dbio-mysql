@@ -1,6 +1,6 @@
 ---
-name: perl-dzil-dbio
-description: "Dist::Zilla and PodWeaver conventions for DBIO distributions ([@DBIO] bundle)"
+name: perl-release-dbio
+description: "Load when dist.ini contains [@DBIO] — DBIO bundle options, version strategy, PodWeaver conventions, driver vs core dist.ini differences, dzil release workflow"
 user-invocable: false
 allowed-tools: Read, Grep, Glob
 model: sonnet
