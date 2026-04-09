@@ -9,6 +9,8 @@ use base qw/DBIO::MySQL::Storage/;
 
 DBIO::Storage::DBI->register_driver('MariaDB' => __PACKAGE__);
 
+__PACKAGE__->sql_maker_class('DBIO::MySQL::SQLMaker::MariaDB');
+
 =head1 SYNOPSIS
 
   package MyApp::Schema;
