@@ -1,5 +1,4 @@
-package # hide from PAUSE
-    DBIO::MySQL::Test::EventTZDeprecated;
+package DBIO::MySQL::Test::EventTZDeprecated;
 # ABSTRACT: Test result class using deprecated extra => { timezone => ... } syntax
 
 use strict;

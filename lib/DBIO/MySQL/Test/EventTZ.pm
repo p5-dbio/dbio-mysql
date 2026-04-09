@@ -1,5 +1,4 @@
-package # hide from PAUSE
-    DBIO::MySQL::Test::EventTZ;
+package DBIO::MySQL::Test::EventTZ;
 # ABSTRACT: Test result class for MySQL/MariaDB timezone-aware datetime inflation
 
 use strict;
