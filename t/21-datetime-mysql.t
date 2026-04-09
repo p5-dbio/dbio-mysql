@@ -27,6 +27,7 @@ my $schema = DBIO::Test->init_schema(
   dsn  => $dsn,
   user => $user,
   pass => $pass,
+  deploy_args => { add_drop_table => 1 },
 );
 
 # Test "timezone" parameter

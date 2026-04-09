@@ -176,8 +176,10 @@ SKIP: {
 
     # MySQL 8.0+ removed integer display width, so size is undef for INT.
     # MariaDB still returns display width regardless of version.
-    # Detect by server version string — DBD::MariaDB may connect to either.
-    my $is_mariadb = ($schema->storage->_server_info->{dbms_version} // '') =~ /mariadb/i;
+    # Detect by querying VERSION() directly — _server_info's dbms_version
+    # may not contain the "MariaDB" suffix depending on DBD flavor.
+    my ($ver_string) = $schema->storage->dbh->selectrow_array('SELECT VERSION()');
+    my $is_mariadb = ($ver_string // '') =~ /mariadb/i;
     if ($norm_version >= 8.000000_00 && !$is_mariadb) {
         $test_type_info->{artistid}{size} = undef;
         $test_type_info->{rank}{size} = undef;

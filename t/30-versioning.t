@@ -41,9 +41,7 @@ $Data::Dumper::Deparse = 1;
 
 use_ok('DBIOVersion_v1');
 
-# TODO: rename table once DBIO core renames it from the legacy DBIx::Class name
-my $version_table_name = 'dbix_class_schema_versions';
-my $old_table_name = 'SchemaVersions';
+my $version_table_name = 'dbio_schema_versions';
 
 my $ddl_dir = dir_path('t', 'var', "versioning_ddl-$$");
 mkpath($ddl_dir) unless -d $ddl_dir;
@@ -58,7 +56,6 @@ my $fn = {
 
 my $schema_v1 = DBIOVersion::Schema->connect($dsn, $user, $pass, { ignore_version => 1 });
 eval { $schema_v1->storage->dbh->do('drop table ' . $version_table_name) };
-eval { $schema_v1->storage->dbh->do('drop table ' . $old_table_name) };
 
 is($schema_v1->ddl_filename('MySQL', '1.0', $ddl_dir), $fn->{v1}, 'Filename creation working');
 unlink( $fn->{v1} ) if ( -e $fn->{v1} );
@@ -111,19 +108,6 @@ my $schema_v2 = DBIOVersion::Schema->connect($dsn, $user, $pass, { ignore_versio
   lives_ok (sub {
     $schema_version->storage->dbh->do('select * from ' . $version_table_name);
   }, 'version table exists');
-
-  lives_ok (sub {
-    $schema_version->storage->dbh->do("DROP TABLE IF EXISTS $old_table_name");
-    $schema_version->storage->dbh->do("RENAME TABLE $version_table_name TO $old_table_name");
-  }, 'versions table renamed to old style table');
-
-  $schema_version = DBIOVersion::Schema->connect($dsn, $user, $pass);
-  is($schema_version->get_db_version, '2.0', 'transition from old table name to new okay');
-
-  dies_ok (sub {
-    $schema_version->storage->dbh->do('select * from ' . $old_table_name);
-  }, 'old version table gone');
-
 }
 
 # repeat the v1->v2 process for v2->v3 before testing v1->v3
@@ -157,8 +141,7 @@ my $schema_v3 = DBIOVersion::Schema->connect($dsn, $user, $pass, { ignore_versio
 {
   # drop all the tables...
   eval { $schema_v1->storage->dbh->do('drop table ' . $version_table_name) };
-  eval { $schema_v1->storage->dbh->do('drop table ' . $old_table_name) };
-  eval { $schema_v1->storage->dbh->do('drop table TestVersion') };
+    eval { $schema_v1->storage->dbh->do('drop table TestVersion') };
 
   {
     local $DBIOVersion::Schema::VERSION = '1.0';
@@ -179,8 +162,7 @@ my $schema_v3 = DBIOVersion::Schema->connect($dsn, $user, $pass, { ignore_versio
 {
   # drop all the tables...
   eval { $schema_v1->storage->dbh->do('drop table ' . $version_table_name) };
-  eval { $schema_v1->storage->dbh->do('drop table ' . $old_table_name) };
-  eval { $schema_v1->storage->dbh->do('drop table TestVersion') };
+    eval { $schema_v1->storage->dbh->do('drop table TestVersion') };
 
   {
     local $DBIOVersion::Schema::VERSION = '1.0';
@@ -239,8 +221,7 @@ my $schema_v3 = DBIOVersion::Schema->connect($dsn, $user, $pass, { ignore_versio
 # attempt a deploy/upgrade cycle within one second
 {
   eval { $schema_v2->storage->dbh->do('drop table ' . $version_table_name) };
-  eval { $schema_v2->storage->dbh->do('drop table ' . $old_table_name) };
-  eval { $schema_v2->storage->dbh->do('drop table TestVersion') };
+    eval { $schema_v2->storage->dbh->do('drop table TestVersion') };
 
   # this attempts to sleep until the turn of the second
   my $t = time();

@@ -26,7 +26,21 @@ Revision history for DBIO-MySQL
       routes through DBIO::MySQL::Deploy instead of SQL::Translator
     - Remove DBIx::Class backcompat shim 'for => "shared"' from
       MySQL::SQLMaker along with its deprecation warning; use
-      'for => "share"' (FOR SHARE) only
+      'for => "share"' (FOR SHARE) only -- MariaDB, which does not
+      support FOR SHARE, goes through DBIO::MySQL::SQLMaker::MariaDB
+      instead (below)
+    - Add DBIO::MySQL::SQLMaker::MariaDB: MariaDB SQLMaker subclass
+      that maps 'for => "share"' to LOCK IN SHARE MODE since MariaDB
+      does not implement the FOR SHARE keyword. DBIO::MySQL::Storage::
+      MariaDB now declares this class as its sql_maker_class
+    - Fix t/10-mysql.t MariaDB detection: use SELECT VERSION() directly
+      instead of _server_info->{dbms_version} which may not include
+      the "MariaDB" suffix depending on DBD flavor
+    - Drop legacy SchemaVersions -> dbix_class_schema_versions migration
+      steps from t/30-versioning.t (core no longer supports the
+      transition) and update table name to dbio_schema_versions
+    - t/21-datetime-mysql.t now deploys with add_drop_table => 1 so it
+      can run in sequence with other tests that share the test database
     - Remove all "package # hide from PAUSE" tricks from test helper
       result classes
     - Remove workspace .proverc (tests run against installed dbio core
