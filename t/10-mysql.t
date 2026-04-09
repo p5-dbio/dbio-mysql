@@ -86,15 +86,15 @@ lives_ok {
   });
 } 'Limited FOR UPDATE select works';
 
-# shared-lock
+# shared lock (FOR SHARE)
 lives_ok {
   $schema->txn_do (sub {
     isa_ok (
-      $schema->resultset('Artist')->find({artistid => 1}, {for => 'shared'}),
+      $schema->resultset('Artist')->find({artistid => 1}, {for => 'share'}),
       'DBIO::Test::Schema::Artist',
     );
   });
-} 'LOCK IN SHARE MODE select works';
+} 'FOR SHARE select works';
 
 my $test_type_info = {
     'artistid' => {

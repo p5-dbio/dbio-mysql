@@ -183,7 +183,6 @@ MySQL's parser.
 my $lock_types = {
   update => 'FOR UPDATE',
   share => 'FOR SHARE',
-  shared => 'LOCK IN SHARE MODE'  # Deprecated but maintained
 };
 
 my $lock_modifiers = {
@@ -193,13 +192,6 @@ my $lock_modifiers = {
 
 sub _lock_select {
   my ($self, $type) = @_;
-
-  if (!ref $type && $type eq 'shared') {
-    warnings::warnif(
-      'deprecated',
-       "'for => 'shared'' is deprecated. Please use 'for => 'share'' instead"
-    );
-  }
 
   # Handle hash-based configuration to support new featureset
   if (ref $type eq 'HASH') {
@@ -241,7 +233,7 @@ sub _lock_select {
 =method _lock_select
 
 Generates the locking clause appended to C<SELECT> statements. Accepts
-either a plain string (C<'update'>, C<'share'>, C<'shared'>) or a hashref
+either a plain string (C<'update'>, C<'share'>) or a hashref
 for fine-grained control:
 
   $rs->search({}, { for => { type => 'update', of => ['tbl'], modifier => 'nowait' } });
@@ -249,9 +241,6 @@ for fine-grained control:
 Valid C<type> values: C<update>, C<share>.
 Valid C<modifier> values: C<nowait>, C<skip_locked>.
 The C<of> key takes a table name or arrayref of table names.
-
-Note: C<'shared'> (C<LOCK IN SHARE MODE>) is deprecated; use C<'share'>
-(C<FOR SHARE>) instead.
 
 =seealso
 

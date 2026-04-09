@@ -179,17 +179,6 @@ for (
   );
 
   is_same_sql_bind(
-    $schema->resultset('Artist')->search({}, {for => 'shared'})->as_query,
-    '(
-      SELECT `me`.`artistid`, `me`.`name`, `me`.`rank`, `me`.`charfield`
-        FROM `artist` `me`
-        LOCK IN SHARE MODE
-    )',
-    [],
-    'LOCK IN SHARE MODE (deprecated shared) works correctly'
-  );
-
-  is_same_sql_bind(
     $schema->resultset('Artist')->search({}, {for => 'share'})->as_query,
     '(
       SELECT `me`.`artistid`, `me`.`name`, `me`.`rank`, `me`.`charfield`
