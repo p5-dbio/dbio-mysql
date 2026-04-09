@@ -9,6 +9,8 @@ use base qw/DBIO::Storage::DBI/;
 
 __PACKAGE__->register_driver('mysql' => __PACKAGE__);
 
+sub dbio_deploy_class { 'DBIO::MySQL::Deploy' }
+
 __PACKAGE__->sql_maker_class('DBIO::MySQL::SQLMaker');
 __PACKAGE__->sql_quote_char('`');
 __PACKAGE__->datetime_parser_type('DateTime::Format::MySQL');

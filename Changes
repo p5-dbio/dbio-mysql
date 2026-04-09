@@ -8,3 +8,28 @@ Revision history for DBIO-MySQL
     - Move PEEPEENESS test usage to DBIO::Util
     - Add deploy_defaults() and deploy_setup() to MySQL::Storage so drivers
       declare their own test-deploy requirements (add_drop_table, sql_mode fixup)
+    - Add native Introspect/Diff/DDL/Deploy modules (parallel to the
+      DBIO::PostgreSQL and DBIO::SQLite sets). Replaces the SQL::Translator
+      path for schema deployment and diffing:
+        . DBIO::MySQL::Introspect (+ Tables, Columns, Indexes,
+          ForeignKeys) via information_schema
+        . DBIO::MySQL::DDL generator from Result classes with
+          ENGINE/CHARSET/COLLATE handling
+        . DBIO::MySQL::Diff (+ Table, Column, Index, ForeignKey) with
+          columns inlined on CREATE TABLE and full MODIFY COLUMN support
+        . DBIO::MySQL::Deploy with install/diff/apply/upgrade using
+          CREATE DATABASE for the test-deploy target
+    - Add DBIO::MySQL::Result component with mysql_engine, mysql_charset,
+      mysql_collate and mysql_index declarations (consumed by the DDL
+      generator)
+    - Storage now declares dbio_deploy_class so DBIO::Schema->deploy()
+      routes through DBIO::MySQL::Deploy instead of SQL::Translator
+    - Remove DBIx::Class backcompat shim 'for => "shared"' from
+      MySQL::SQLMaker along with its deprecation warning; use
+      'for => "share"' (FOR SHARE) only
+    - Remove all "package # hide from PAUSE" tricks from test helper
+      result classes
+    - Remove workspace .proverc (tests run against installed dbio core
+      via dzil install)
+    - Add t/40-diff.t (33 unit tests covering all Diff modules and the
+      orchestrator) and t/41-introspect-load.t (12 module load tests)
