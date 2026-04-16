@@ -5,7 +5,7 @@ our $VERSION = '0.900000';
 use strict;
 use warnings;
 
-use base 'DBIO';
+use base 'DBIO::Base';
 
 __PACKAGE__->mk_classdata('_mysql_indexes' => {});
 __PACKAGE__->mk_classdata('_mysql_engine');

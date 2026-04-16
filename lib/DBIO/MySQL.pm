@@ -5,7 +5,7 @@ our $VERSION = '0.900000';
 use strict;
 use warnings;
 
-use base 'DBIO';
+use base 'DBIO::Base';
 
 =head1 SYNOPSIS
 
