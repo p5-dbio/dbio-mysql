@@ -184,7 +184,16 @@ sub _temp_connect_info {
   my ($self, $temp_db) = @_;
   my $storage = $self->schema->storage;
   my @info    = @{ $storage->connect_info };
-  my ($dsn, $user, $pass) = @info;
+
+  my ($dsn, $user, $pass);
+  if (ref $info[0] eq 'HASH') {
+    my $h = $info[0];
+    $dsn  = $h->{dsn};
+    $user = $h->{user};
+    $pass = $h->{password} // $h->{pass};
+  } else {
+    ($dsn, $user, $pass) = @info;
+  }
 
   if (ref $dsn eq 'CODE') {
     die "DBIO::MySQL::Deploy does not support coderef DSN";
