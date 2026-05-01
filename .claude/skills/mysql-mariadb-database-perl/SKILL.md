@@ -1,133 +1,68 @@
 ---
 name: mysql-mariadb-database-perl
-description: "MySQL and MariaDB database knowledge for Perl driver development (DBD::mysql, storage engines, charset, MariaDB differences)"
+description: "MySQL and MariaDB knowledge for Perl driver development (DBD::mysql, storage engines, charset, MariaDB differences)"
 user-invocable: false
 allowed-tools: Read, Grep, Glob
 model: sonnet
 ---
 
-MySQL and MariaDB knowledge for Perl database driver development.
+MySQL/MariaDB for Perl DB driver development.
 
-## DBD::mysql (Perl DBI Driver)
+## DBD::mysql
 
-- `DBD::mysql` handles both MySQL and MariaDB connections
-- Connection: `DBI->connect("dbi:mysql:database=mydb;host=localhost", $user, $pass)`
-- `mysql_enable_utf8mb4 => 1` — essential for proper Unicode
-- `mysql_auto_reconnect => 0` — disable in production (breaks transactions)
+Handles both MySQL and MariaDB. Connection:
+```perl
+DBI->connect("dbi:mysql:database=mydb;host=localhost", $user, $pass)
+```
+Critical flags: `mysql_enable_utf8mb4 => 1` (Unicode), `mysql_auto_reconnect => 0` (transactions).
 
-## MySQL vs MariaDB Key Differences
+## MySQL vs MariaDB
 
 | Feature | MySQL | MariaDB |
 |---------|-------|---------|
-| JSON type | Native `JSON` | Alias for `LONGTEXT` (before 10.5) |
-| CTEs | 8.0+ | 10.2+ (earlier support) |
+| JSON type | Native `JSON` | Alias `LONGTEXT` (<10.5) |
+| CTEs | 8.0+ | 10.2+ |
 | Window functions | 8.0+ | 10.2+ |
-| Sequences | No | 10.3+ (`CREATE SEQUENCE`) |
-| System versioning | No | 10.3+ (`WITH SYSTEM VERSIONING`) |
-| CHECK constraints | Parsed but ignored (<8.0.16) | Enforced |
-| Default storage engine | InnoDB | InnoDB (Aria for system tables) |
-| `RETURNING` clause | No | 10.5+ |
-| UUID type | No native type | `UUID` type (10.7+) |
+| Sequences | No | 10.3+ |
+| System versioning | No | 10.3+ |
+| CHECK constraints | Ignored (<8.0.16) | Enforced |
+| RETURNING clause | No | 10.5+ |
+| UUID type | No | 10.7+ |
 
-Detection in Perl:
-
-```perl
-my $version = $dbh->selectrow_array("SELECT VERSION()");
-my $is_mariadb = $version =~ /MariaDB/i;
-```
+Detection: `($version =~ /MariaDB/i)`
 
 ## Storage Engines
 
-| Engine | Use Case |
-|--------|----------|
-| **InnoDB** | Default. ACID, row-level locking, FK support |
-| **MyISAM** | Legacy. Table-level locking, no transactions, no FK |
-| **MEMORY** | Temporary data. Lost on restart |
-| **Aria** | MariaDB only. Crash-safe MyISAM replacement |
-| **ColumnStore** | MariaDB only. Analytical/OLAP workloads |
+InnoDB = default, row-level locking, ACID, FK. MyISAM = legacy, table-lock, no transactions. MEMORY = temp, lost on restart. Aria = MariaDB crash-safe MyISAM replacement.
 
-For DBIO driver: always assume InnoDB. MyISAM support is legacy.
+Always assume InnoDB for DBIO driver.
 
-## Character Sets and Collations
+## Character Sets
 
-```sql
--- Connection level (critical!)
-SET NAMES utf8mb4;
-
--- Table level
-CREATE TABLE t (...) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-```
-
-- **Always use `utf8mb4`** — MySQL's `utf8` is broken (only 3 bytes, no emoji)
-- Default collation: `utf8mb4_0900_ai_ci` (MySQL 8.0+) or `utf8mb4_unicode_ci`
-- MariaDB uses `utf8mb4_general_ci` as default
+`utf8mb4` only — MySQL's `utf8` is 3-byte broken. Connection: `SET NAMES utf8mb4`. Table: `CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci` (MySQL 8.0+) or `utf8mb4_general_ci` (MariaDB default).
 
 ## Type System
 
-### Numeric
-
-| Type | Size | Range |
-|------|------|-------|
-| `TINYINT` | 1 byte | -128 to 127 |
-| `SMALLINT` | 2 bytes | -32768 to 32767 |
-| `MEDIUMINT` | 3 bytes | ~8M |
-| `INT` | 4 bytes | ~2B |
-| `BIGINT` | 8 bytes | ~9.2E18 |
-| `DECIMAL(M,D)` | Variable | Exact precision |
-| `FLOAT` | 4 bytes | Approximate |
-| `DOUBLE` | 8 bytes | Approximate |
-
-### String
-
-| Type | Max Length | Use Case |
-|------|-----------|----------|
-| `VARCHAR(N)` | 65,535 bytes | Variable-length strings |
-| `TEXT` | 65,535 bytes | Long text |
-| `MEDIUMTEXT` | 16 MB | Larger text |
-| `LONGTEXT` | 4 GB | Very large text |
-| `ENUM('a','b')` | 65,535 values | Fixed set of strings |
-| `SET('a','b')` | 64 members | Multiple values from set |
-| `JSON` | ~1 GB | JSON documents (MySQL 5.7+) |
-
-### Date/Time
-
-| Type | Format | Range |
-|------|--------|-------|
-| `DATE` | `YYYY-MM-DD` | 1000-01-01 to 9999-12-31 |
-| `TIME` | `HH:MM:SS` | -838:59:59 to 838:59:59 |
-| `DATETIME` | `YYYY-MM-DD HH:MM:SS` | 1000 to 9999 |
-| `TIMESTAMP` | `YYYY-MM-DD HH:MM:SS` | 1970 to 2038 (UTC stored) |
+Numeric: TINYINT(1), SMALLINT(2), MEDIUMINT(3), INT(4), BIGINT(8), DECIMAL, FLOAT, DOUBLE.
+String: VARCHAR(65535), TEXT, MEDIUMTEXT(16MB), LONGTEXT(4GB), ENUM, SET, JSON(1GB).
+Date: DATE, TIME, DATETIME, TIMESTAMP (1970-2038, UTC).
 
 ## Auto-Increment
 
-```sql
-CREATE TABLE t (id INT AUTO_INCREMENT PRIMARY KEY);
-INSERT INTO t (name) VALUES ('foo');
-SELECT LAST_INSERT_ID();  -- returns the auto-increment value
-```
+`LAST_INSERT_ID()` per-connection. Perl: `$dbh->last_insert_id` or `$dbh->{mysql_insertid}`.
 
-- `LAST_INSERT_ID()` is per-connection (thread-safe)
-- In Perl: `$dbh->last_insert_id(undef, undef, undef, undef)` or `$dbh->{mysql_insertid}`
+## Transactions & Locking
 
-## Transaction & Locking
-
-- InnoDB: row-level locking, MVCC
-- `START TRANSACTION` / `COMMIT` / `ROLLBACK`
-- Savepoints: `SAVEPOINT sp1` / `ROLLBACK TO sp1` / `RELEASE SAVEPOINT sp1`
-- `SELECT ... FOR UPDATE` — exclusive row lock
-- `SELECT ... LOCK IN SHARE MODE` — shared row lock
-- Deadlock detection: InnoDB auto-detects, rolls back one transaction
+InnoDB: row-level locking, MVCC. `START TRANSACTION/COMMIT/ROLLBACK`. Savepoints: `SAVEPOINT sp` / `ROLLBACK TO sp` / `RELEASE SAVEPOINT sp`. `SELECT ... FOR UPDATE` (exclusive), `SELECT ... LOCK IN SHARE MODE` (shared). Deadlocks auto-detected.
 
 ## LIMIT/OFFSET
 
 ```sql
 SELECT * FROM t LIMIT 10 OFFSET 20;
--- or
 SELECT * FROM t LIMIT 20, 10;  -- offset, count (MySQL-specific order!)
 ```
 
-## Testing with MySQL/MariaDB
+## Testing Env Vars
 
-- Integration tests: `DBIO_TEST_MYSQL_DSN`, `DBIO_TEST_MYSQL_USER`, `DBIO_TEST_MYSQL_PASS`
-- Docker: `docker run -d -e MYSQL_ROOT_PASSWORD=test -p 3306:3306 mysql:8`
-- MariaDB: `docker run -d -e MARIADB_ROOT_PASSWORD=test -p 3306:3306 mariadb:11`
+`DBIO_TEST_MYSQL_DSN`, `DBIO_TEST_MYSQL_USER`, `DBIO_TEST_MYSQL_PASS`.
+Docker: `mysql:8` or `mariadb:11`.
