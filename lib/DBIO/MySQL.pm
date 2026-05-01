@@ -9,12 +9,54 @@ use base 'DBIO::Base';
 
 =head1 SYNOPSIS
 
+=head2 Schema class
+
+  package MyApp::Schema;
+  use DBIO 'Schema';
+  __PACKAGE__->load_components('MySQL');
+
+=head2 Result classes
+
+  package MyApp::Schema::Result::Artist;
+  use DBIO;
+
+  __PACKAGE__->table('artist');
+  __PACKAGE__->add_columns(
+    id   => { data_type => 'integer', is_auto_increment => 1 },
+    name => { data_type => 'varchar', size => 100 },
+  );
+  __PACKAGE__->set_primary_key('id');
+  __PACKAGE__->has_many(cds => 'MyApp::Schema::Result::CD', 'artist_id');
+
+  package MyApp::Schema::Result::CD;
+  use DBIO;
+
+  __PACKAGE__->table('cd');
+  __PACKAGE__->add_columns(
+    id        => { data_type => 'integer', is_auto_increment => 1 },
+    artist_id => { data_type => 'integer' },
+    title     => { data_type => 'varchar', size => 200 },
+  );
+  __PACKAGE__->set_primary_key('id');
+  __PACKAGE__->belongs_to(artist => 'MyApp::Schema::Result::Artist', 'artist_id');
+
+=head2 Connecting
+
+  my $schema = MyApp::Schema->connect($dsn, $user, $pass);
+  $schema->deploy;
+
+  my $artist = $schema->resultset('Artist')->create({ name => 'Sonic Youth' });
+  my @cds    = $artist->cds->all;
+
+For MariaDB use C<MySQL::MariaDB> instead:
+
+  __PACKAGE__->load_components('MySQL::MariaDB');
+
+The classic C<use base> form is still supported:
+
   package MyApp::Schema;
   use base 'DBIO::Schema';
-  __PACKAGE__->load_components('DBIO::MySQL');
-
-  # storage_type is set to +DBIO::MySQL::Storage by the component
-  my $schema = __PACKAGE__->connect($dsn, $user, $pass);
+  __PACKAGE__->load_components('MySQL');
 
 =head1 DESCRIPTION
 
