@@ -90,7 +90,7 @@ sub diff {
   my $dbh     = $self->_dbh;
   my $temp_db = $self->_create_temp_db($dbh);
 
-  my $source_model = eval { DBIO::MySQL::Introspect->new(dbh => $dbh)->model };
+  my $source_model = eval { $self->_new_introspect($dbh)->model };
   my $err_source   = $@;
 
   my $target_model = eval { $self->_deploy_and_introspect_temp($temp_db) };
@@ -139,6 +139,18 @@ sub upgrade {
 
 sub _dbh { $_[0]->schema->storage->dbh }
 
+sub _new_introspect {
+  my ($self, $dbh) = @_;
+  return DBIO::MySQL::Introspect->new(dbh => $dbh);
+}
+
+=method _new_introspect
+
+Factory for the introspector. Override in a subclass to use a custom
+L<DBIO::MySQL::Introspect> subclass.
+
+=cut
+
 sub _create_temp_db {
   my ($self, $dbh) = @_;
   my $name = $self->temp_db_prefix . $$ . '_' . time();
@@ -170,7 +182,7 @@ sub _deploy_and_introspect_temp {
   my $model;
   unless ($err) {
     eval {
-      $model = DBIO::MySQL::Introspect->new(dbh => $temp_dbh)->model;
+      $model = $self->_new_introspect($temp_dbh)->model;
     };
     $err = $@ unless $model;
   }
