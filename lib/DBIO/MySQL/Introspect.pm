@@ -5,6 +5,8 @@ our $VERSION = '0.900000';
 use strict;
 use warnings;
 
+use base 'DBIO::Introspect::Base';
+
 use DBIO::MySQL::Introspect::Tables;
 use DBIO::MySQL::Introspect::Columns;
 use DBIO::MySQL::Introspect::Indexes;
@@ -27,24 +29,6 @@ L<DBIO::SQLite::Introspect> so the same diff/deploy patterns apply.
 The introspection is scoped to the current database (the C<dbname>
 component of the DSN) via C<DATABASE()> -- to introspect a different
 schema, connect with that database in the DSN.
-
-=cut
-
-sub new { my ($class, %args) = @_; bless \%args, $class }
-
-sub dbh { $_[0]->{dbh} }
-
-=attr dbh
-
-A connected C<DBI> handle for MySQL or MariaDB. Required.
-
-=cut
-
-sub model { $_[0]->{model} //= $_[0]->_build_model }
-
-=method model
-
-Returns the full introspected model hashref. Built lazily.
 
 =cut
 
