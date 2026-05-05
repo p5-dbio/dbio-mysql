@@ -5,6 +5,8 @@ our $VERSION = '0.900000';
 use strict;
 use warnings;
 
+use base 'DBIO::Diff::Base';
+
 use DBIO::MySQL::Diff::Table;
 use DBIO::MySQL::Diff::Column;
 use DBIO::MySQL::Diff::Index;
@@ -31,13 +33,6 @@ foreign keys.
 
 =cut
 
-sub new { my ($class, %args) = @_; bless \%args, $class }
-
-sub source { $_[0]->{source} }
-sub target { $_[0]->{target} }
-
-sub operations { $_[0]->{operations} //= $_[0]->_build_operations }
-
 sub _build_operations {
   my ($self) = @_;
   my @ops;
@@ -59,33 +54,6 @@ sub _build_operations {
   );
 
   return \@ops;
-}
-
-=method has_changes
-
-=cut
-
-sub has_changes {
-  my ($self) = @_;
-  return scalar @{ $self->operations } > 0;
-}
-
-=method as_sql
-
-=cut
-
-sub as_sql {
-  my ($self) = @_;
-  return join "\n", map { $_->as_sql } @{ $self->operations };
-}
-
-=method summary
-
-=cut
-
-sub summary {
-  my ($self) = @_;
-  return join "\n", map { $_->summary } @{ $self->operations };
 }
 
 1;
