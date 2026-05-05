@@ -27,6 +27,16 @@ sub new_info    { $_[0]->{new_info} }
 
 =method diff
 
+    my @ops = DBIO::MySQL::Diff::Column->diff(
+        $source_columns, $target_columns,
+        $source_tables,  $target_tables,
+    );
+
+Compares column lists for tables that exist in both source and target.
+Detects added columns, dropped columns, and altered columns (data type,
+C<NOT NULL>, or default value changes). Returns a list of
+C<DBIO::MySQL::Diff::Column> objects.
+
 =cut
 
 sub diff {
