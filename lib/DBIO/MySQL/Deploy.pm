@@ -9,6 +9,7 @@ use DBI;
 use DBIO::MySQL::DDL;
 use DBIO::MySQL::Introspect;
 use DBIO::MySQL::Diff;
+use DBIO::SQL::Util qw(_split_statements);
 
 =head1 DESCRIPTION
 
@@ -220,26 +221,7 @@ sub _temp_connect_info {
   return ($dsn, $user, $pass);
 }
 
-sub _split_statements {
-  my ($sql) = @_;
-  my @stmts;
-  my $current = '';
-
-  for my $line (split /\n/, $sql) {
-    $current .= "$line\n";
-    if ($line =~ /;\s*$/) {
-      $current =~ s/^\s+|\s+$//g;
-      push @stmts, $current if $current =~ /\S/;
-      $current = '';
-    }
-  }
-  $current =~ s/^\s+|\s+$//g;
-  push @stmts, $current if $current =~ /\S/;
-
-  return @stmts;
-}
-
-=seealso
+1;
 
 =over 4
 

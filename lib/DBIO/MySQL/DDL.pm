@@ -5,6 +5,8 @@ our $VERSION = '0.900000';
 use strict;
 use warnings;
 
+use DBIO::SQL::Util qw(_quote_ident);
+
 =head1 DESCRIPTION
 
 C<DBIO::MySQL::DDL> generates a MySQL DDL script from a L<DBIO::Schema>
@@ -179,11 +181,6 @@ sub _mysql_column_type {
   );
 
   return $type_map{ lc $type } // $type;
-}
-
-sub _quote_ident {
-  my ($name) = @_;
-  return "`$name`";
 }
 
 1;
