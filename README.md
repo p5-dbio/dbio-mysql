@@ -1,36 +1,98 @@
-# DBIO-MySQL
+# DBIO::MySQL
 
-MySQL driver distribution for DBIO.
+MySQL and MariaDB driver for DBIO (fork of DBIx::Class::Storage::DBI::mysql).
 
-## Scope
+## Supports
 
-- Provides MySQL storage behavior: `DBIO::MySQL::Storage`
-- Provides MariaDB variants: `DBIO::MySQL::MariaDB`,
-  `DBIO::MySQL::Storage::MariaDB`
-- Provides MySQL SQLMaker: `DBIO::MySQL::SQLMaker`
-- Owns MySQL-specific tests from the historical DBIx::Class monolithic test layout
+- desired-state deployment via test-deploy-and-compare (L<DBIO::MySQL::Deploy>)
+- native introspection (L<DBIO::MySQL::Introspect>)
+- native diff (L<DBIO::MySQL::Diff>)
+- native DDL generation (L<DBIO::MySQL::DDL>)
 
-## Migration Notes
+Supports both L<DBD::mysql|https://metacpan.org/pod/DBD::mysql> and L<DBD::MariaDB|https://metacpan.org/pod/DBD::MariaDB>. Install the one matching your server version.
 
-- `DBIx::Class::Storage::DBI::mysql` -> `DBIO::MySQL::Storage`
-- `DBIx::Class::Storage::DBI::MariaDB` -> `DBIO::MySQL::Storage::MariaDB`
-- `DBIx::Class::SQLMaker::MySQL` -> `DBIO::MySQL::SQLMaker`
+## Usage
 
-When installed, DBIO core can autodetect MySQL DSNs and load the storage
-class through `DBIO::Storage::DBI` driver registration.
+    package MyApp::DB;
+    use base 'DBIO::Schema';
+    __PACKAGE__->load_components('MySQL');
+
+    my $schema = MyApp::DB->connect('dbi:mysql:database=myapp');
+
+DBIO core autodetects `dbi:mysql:` DSNs and loads this storage automatically.
+
+## MySQL / MariaDB Features
+
+**Types**
+- `INT`, `BIGINT`, `TINYINT`, `SMALLINT`, `MEDIUMINT` — integer types
+- `VARCHAR`, `CHAR`, `TEXT`, `MEDIUMTEXT`, `LONGTEXT` — string types
+- `ENUM` — enum values (enforced at insert time)
+- `SET` — set values (multiple choice from list)
+- `JSON` — JSON type (MySQL 5.7+, MariaDB 10.2+)
+- `DATETIME`, `TIMESTAMP`, `DATE`, `TIME` — temporal types
+- `DECIMAL` — exact numeric with precision
+- `FLOAT`, `DOUBLE` — approximate numeric
+- `BINARY`, `VARBINARY`, `BLOB` — binary data
+
+**Indexes**
+- `PRIMARY KEY`, `UNIQUE`, `INDEX`, `FULLTEXT` indexes
+- `SPATIAL` indexes for GIS data (POINT, GEOMETRY)
+- Composite indexes across multiple columns
+- Prefix indexes on VARCHAR columns (`col(10)`)
+
+**MySQL-Specific Features**
+- `INSERT ... ON DUPLICATE KEY UPDATE` (upsert) via `insert_or_update`
+- `REPLACE` for delete-and-reinsert semantics
+- `SELECT ... FOR UPDATE` row locking
+- `INSERT IGNORE` to skip duplicate key errors
+- Prepared statement reuse across connections
+
+**GIS Support (Spatial)**
+- `POINT`, `GEOMETRY`, `LINESTRING`, `POLYGON` data types
+- `ST_Distance`, `ST_Within`, `ST_Contains` spatial functions
+- SPATIAL indexes for efficient queries
+
+**Introspection**
+- `INFORMATION_SCHEMA` tables for metadata
+- `SHOW INDEX FROM table` for index details
+- `SHOW CREATE TABLE` for table structure
+- Sequence detection for AUTO_INCREMENT columns
+
+## Deploy
+
+L<DBIO::MySQL::Deploy> orchestrates test-deploy-and-compare:
+
+1. Introspect live database via INFORMATION_SCHEMA (L<DBIO::MySQL::Introspect>)
+2. Deploy desired schema to a temporary database (`_dbio_tmp_<pid>_<time>`)
+3. Introspect the temporary database the same way
+4. Diff source vs target (L<DBIO::MySQL::Diff>)
+5. Drop the temporary database
+
+Install (`install_ddl`) creates fresh schema. Upgrade diffs live vs. desired.
 
 ## Testing
 
-Set environment variables for integration tests:
+Requires a running MySQL or MariaDB instance:
 
-- `DBIO_TEST_MYSQL_DSN`
-- `DBIO_TEST_MYSQL_USER`
-- `DBIO_TEST_MYSQL_PASS`
+```bash
+export DBIO_TEST_MYSQL_DSN="dbi:mysql:database=myapp"
+export DBIO_TEST_MYSQL_USER=root
+export DBIO_TEST_MYSQL_PASS=secret
+prove -l t/
+```
 
-`t/20-sqlmaker-mysql.t` can run without a live database by using
-`DBIO::Test` hybrid fake storage with
-`storage_type => 'DBIO::MySQL::Storage'`.
+Offline tests (`t/00-load.t`, SQLMaker tests) run without a database.
 
-Shared driver tests can also exercise the replicated core path with:
+## Requirements
 
-`DBIO::Test->init_schema(replicated => 1, storage_type => 'DBIO::MySQL::Storage')`
+- Perl 5.36+
+- L<DBD::mysql|https://metacpan.org/pod/DBD::mysql> or L<DBD::MariaDB|https://metacpan.org/pod/DBD::MariaDB>
+- DBIO core
+
+## See Also
+
+L<DBIO::Introspect::Base>, L<DBIO::Diff::Base>, L<DBIO::Deploy>
+
+## Repository
+
+L<https://github.com/p5-dbio/dbio-mysql>
